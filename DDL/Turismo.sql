@@ -79,6 +79,17 @@ BEGIN
 END
 GO
 
+IF SCHEMA_ID(N'Hospedaje') IS NULL
+BEGIN 
+    EXEC (N'CREATE SCHEMA Hospedaje AUTHORIZATION dbo;');
+    PRINT 'Se ha creado el esquema de Hospedaje';
+END 
+ELSE 
+BEGIN 
+    PRINT 'Esquema Hospedaje creado';
+END
+GO
+
 -- =========================================
 -- CREACIÓN DE TABLAS
 -- =========================================
@@ -500,4 +511,118 @@ CREATE TABLE Compras.Direccion_Proveedor(
 
 );
 print 'Tabla Direccion Proveedor creada';
+go
+
+--Crear tabla Tipo_Alojamiento
+if OBJECT_ID('Hospedaje.Tipo_Alojamiento', 'U') is not null
+begin
+    Drop Table Hospedaje.Tipo_Alojamiento;
+    print 'La tabla Hospedaje.Tipo_Alojamiento Eliminada'
+end
+go
+
+CREATE TABLE Hospedaje.Tipo_Alojamiento(
+  idtipoalojamiento int identity(1,1),
+  nombre_tipo varchar(50) not null, --hotel, casa de campo, hostal, cabaña
+  descripcion nvarchar(max) null,
+  fecha_registro datetime default getdate(),
+  icono_url varchar(255) null,
+  constraint PK_tipo_alojamiento primary key (idtipoalojamiento),
+  constraint UQ_nombre_tipo_aloj
+  unique (nombre_tipo)
+
+
+);
+print 'Tabla Tipo_Alojamiento creada';
+go
+
+--Crear tabla Alojamiento
+if OBJECT_ID('Hospedaje.Tipo_Alojamiento', 'U') is not null
+begin
+    Drop Table Hospedaje.Alojamiento;
+    print 'La tabla Hospedaje.Alojamiento Eliminada'
+end
+go
+
+CREATE TABLE Hospedaje.Alojamiento(
+  idalojamiento int identity(1,1),
+  constraint PK_alojamiento primary key (idalojamiento),
+  idtipoalojamiento int not null,
+  constraint FK_tipo_alojamiento 
+  foreign key (idtipoalojamiento) references Hospedaje.Tipo_Alojamiento (idtipoalojamiento),
+  nombre varchar(50) not null,
+  telefono varchar(20) not null,
+  correo varchar(100),
+  Categoria_Estrellas tinyint,
+  fecha_registro datetime default getdate(),
+  constraint CHK_categoria_estrellas
+  check (categoria_estrellas between 1 and 5) --solo a hoteles 
+);
+print 'Tabla Alojamiento creada';
+go
+
+--Crear tabla Direccion_Alojamiento
+if OBJECT_ID('Hospedaje.Direccion_Alojamiento', 'U') is not null
+begin
+    Drop Table Hospedaje.Direccion_Alojamiento;
+    print 'La tabla Hospedaje.Direccion_Alojamiento Eliminada'
+end
+go
+
+CREATE TABLE Hospedaje.Direccion_Alojamiento(
+  idalojamiento int not null,
+  iddireccion int not null,
+  tipo_direccion varchar(20) not null default 'Fisica',
+  referencia varchar(max),
+  es_principal bit default 0,
+  fecha_registro datetime default getdate(),
+  constraint PK_dire_alojamiento primary key (idalojamiento, iddireccion),
+  constraint FK_id_alojamiento 
+  foreign key (idalojamiento) references Hospedaje.Alojamiento (idalojamiento),
+  constraint FK_id_direccion
+  foreign key (iddireccion)references OERA.Direccion(iddireccion)
+);
+print 'Tabla Direccion_Alojamiento creada';
+go
+
+--Crear tabla Proveedor_Alojamiento
+if OBJECT_ID('Hospedaje.Proveedor_Alojamiento', 'U') is not null
+begin
+    Drop Table Hospedaje.Proveedor_Alojamiento;
+    print 'La tabla Hospedaje.Proveedor_Alojamiento Eliminada'
+end
+go
+
+CREATE TABLE Hospedaje.Proveedor_Alojamiento (
+    idproveedoralojamiento int not null identity(1,1),
+    idpersona int not null,
+    idalojamiento int not null,
+    fecha_registro datetime default getdate(),
+    constraint PK_ProveedorAlojamiento primary key (idproveedoralojamiento),
+    constraint FK_idpersona_rovee_alojamiento
+    foreign key (idpersona) references RRHH.Persona(idpersona),
+    constraint FK_idalojamiento_provee_alojamiento
+    foreign key (idalojamiento) references Hospedaje.Alojamiento (idalojamiento)
+);
+print 'Tabla Proveedor_Alojamiento creada';
+go
+
+--Crear tabla Tipo_Habitacion
+if OBJECT_ID('Hospedaje.Tipo_Habitacion', 'U') is not null
+begin
+    Drop Table Hospedaje.Tipo_Habitacion;
+    print 'La tabla Hospedaje.Tipo_Habitacion Eliminada'
+end
+go
+
+CREATE TABLE Hospedaje.Tipo_Habitacion(
+  idtipohabitacion int identity (1,1),
+  nombrehabitacion varchar(50) not null,
+  constraint PK_idtipohabitacion primary key (idtipohabitacion),
+  constraint UQ_nomhabitacion Unique(nombrehabitacion),
+  capacidad_persona int not null,
+  descripcion varchar(max),
+
+);
+print 'Tabla Tipo_Habitacion creada';
 go

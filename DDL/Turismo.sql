@@ -90,6 +90,28 @@ BEGIN
 END
 GO
 
+IF SCHEMA_ID(N'Lugar') IS NULL
+BEGIN 
+    EXEC (N'CREATE SCHEMA Lugar AUTHORIZATION dbo;');
+    PRINT 'Se ha creado el esquema de Lugar';
+END 
+ELSE 
+BEGIN 
+    PRINT 'Esquema Lugar creado';
+END
+GO
+
+IF SCHEMA_ID(N'Transporte') IS NULL
+BEGIN 
+    EXEC (N'CREATE SCHEMA Transporte AUTHORIZATION dbo;');
+    PRINT 'Se ha creado el esquema de Transporte';
+END 
+ELSE 
+BEGIN 
+    PRINT 'Esquema Transporte creado';
+END
+GO
+
 -- =========================================
 -- CREACIÓN DE TABLAS
 -- =========================================
@@ -353,8 +375,10 @@ go
 
 CREATE TABLE RRHH.Empleado(
     idpersona int not null,
-    fecha_registro datetime default getdate(),
     constraint PK_Empleado Primary key (idpersona),
+    idcargo int not null,
+    constraint FK_cargo_empleado
+    foreign key (idcargo) references rrhh.cargo(idcargo),
     cod_empleado varchar(15) null,
     fecha_ingreso date not null,
     fecha_cese date not null,
@@ -368,6 +392,7 @@ CREATE TABLE RRHH.Empleado(
     contacto_emergencia varchar(150) null,
     telefono_emergencia varchar(20) null,
     observaciones varchar(max) null, --Informacion adicional
+    fecha_registro datetime default getdate(),
     CONSTRAINT FK_empleado_persona
     Foreign key (idpersona) References RRHH.Persona (idpersona),
     constraint FK_empleado_supervisor
@@ -445,7 +470,7 @@ begin
 end
 go
 
-CREATE TABLE Compras.Categorìa_Proveedor(
+CREATE TABLE Compras.Categoria_Proveedor(
  idcat_proveedor int identity (1,1),
  nomcat_proveedor varchar(60) not null,
  despcripcion varchar(max),
@@ -473,12 +498,15 @@ CREATE TABLE Compras.Proveedor(
  requiere_contrato bit not null default 0,
  estado_proveedor varchar(20) not null default 'Activo',
  observaciones nvarchar(max) null,
+ idcat_proveedor int not null,
  fecha_registro datetime default getdate(),
  constraint PK_proveedor primary key(idpersona),
  constraint CHK_Estado_Proveedor 
  CHECK (estado_proveedor in ('Activo', 'Inactivo', 'Suspendido')),
  constraint FK_proveedor_persona
- foreign key(idpersona) References RRHH.Persona(idpersona)
+ foreign key(idpersona) References RRHH.Persona(idpersona),
+ constraint FK_cate_proveedor
+ foreign key (idcat_proveedor) references Compras.Categoria_Proveedor(idcat_proveedor)
 );
 print 'Tabla Proveedor creada';
 go
@@ -622,7 +650,65 @@ CREATE TABLE Hospedaje.Tipo_Habitacion(
   constraint UQ_nomhabitacion Unique(nombrehabitacion),
   capacidad_persona int not null,
   descripcion varchar(max),
+  fecha_registro datetime default getdate(),
 
 );
 print 'Tabla Tipo_Habitacion creada';
+go
+
+--Crear tabla Habitacion
+if OBJECT_ID('Hospedaje.Habitacion', 'U') is not null
+begin
+    Drop Table Hospedaje.Habitacion;
+    print 'La tabla Hospedaje.Habitacion Eliminada'
+end
+go
+
+CREATE TABLE Hospedaje.Habitacion(
+  idhabitacion int identity (1,1),
+  idpersona int not null,
+  idalojamiento int not null,
+  numero_habitacion varchar(10) not null,
+  idtipohabitacion int not null,
+  precio_noche decimal(10,2) not null,
+  estado varchar(20) default 'Disponible'
+  constraint CHK_estadohabitacion
+  check (estado in('Disponible', 'Ocupado', 'Matematico', 'Fuera Servicio')),
+  descripcion varchar(max),
+  fecha_registro datetime default getdate(),
+  constraint PK_habitacion primary key (idhabitacion),
+  constraint UQ_habitacion
+  unique (idpersona, numero_habitacion, idalojamiento),
+  constraint FK_id_persona_habitacion
+  foreign key (idpersona) references RRHH.persona(idpersona),
+  constraint FK_id_alojamiento_habitacion
+  foreign key (idalojamiento) references Hospedaje.Alojamiento(idalojamiento),
+  constraint FK_id_tipo_habitacion
+  foreign key (idtipohabitacion) references Hospedaje.Tipo_Habitacion(idtipohabitacion),
+);
+print 'Tabla Habitacion creada';
+go
+
+--Crear tabla Lugar_turistico
+if OBJECT_ID('Lugar.Lugar_turistico', 'U') is not null
+begin
+    Drop Table Lugar.Lugar_turistico;
+    print 'La tabla Lugar.Lugar_turistico Eliminada'
+end
+go
+
+CREATE TABLE Lugar.Lugar_turistico(
+  idlugarturistico int identity(1,1),
+  nombre varchar(200) not null,
+  descripcion varchar(max) null,
+  precio_entrada decimal (10,2) default 0.00,
+  horario_apertura time not null,
+  horario_cierre time not null,
+  calificacion decimal (3,2) default 0.00,
+  estado varchar(20) default 'Activo',
+  constraint PK_lugar_turistico primary key (idlugarturistico),
+  constraint CHK_estado_lugar
+  check (estado in ('Activo', 'Inactivo', 'Temporalmente Cerrado'))
+);  
+print 'Tabla Lugar_turistico creada';
 go

@@ -706,9 +706,88 @@ CREATE TABLE Lugar.Lugar_turistico(
   horario_cierre time not null,
   calificacion decimal (3,2) default 0.00,
   estado varchar(20) default 'Activo',
+  fecha_registro datetime default getdate(),
   constraint PK_lugar_turistico primary key (idlugarturistico),
   constraint CHK_estado_lugar
   check (estado in ('Activo', 'Inactivo', 'Temporalmente Cerrado'))
 );  
 print 'Tabla Lugar_turistico creada';
+go
+
+--Crear tabla Direccion.Lugar_turistico
+if OBJECT_ID('Direccion.LugarTuristico', 'U') is not null
+begin
+    Drop Table Direccion.LugarTuristico;
+    print 'La tabla Direccion.LugarTuristico Eliminada'
+end
+go
+
+CREATE TABLE Lugar.LugarTuristico(
+  idlugarturistico int not null,
+  iddireccion int not null,
+  tipo_direccion varchar(20) not null default 'Fisica',
+  Referencia varchar(max),
+  es_principal bit default 0,
+  fecha_registro datetime default getdate(),
+  constraint PK_dire_lugarturisico
+  primary key (idlugarturistico, iddireccion),
+  constraint FK_id_lugar_direccion
+  foreign key(idlugarturistico) references Lugar.Lugar_turistico (idlugarturistico),
+  constraint FK_id_direccion_lugar_t
+  foreign key (iddireccion) references OERA.direccion(iddireccion)
+
+);  
+print 'Tabla Direccion.LugarTuristico creada';
+go
+
+--Crear tabla Tipo_Transporte
+if OBJECT_ID('Transporte.Tipo_Transporte', 'U') is not null
+begin
+    Drop Table Transporte.Tipo_Transporte;
+    print 'La tabla Transporte.Tipo_Transporte Eliminada'
+end
+go
+
+CREATE TABLE Transporte.Tipo_Transporte(
+  idtipotransporte int identity (1,1),
+  nombre varchar (50) not null,
+  descripcion varchar(max),
+  constraint PK_tipotransporte primary key (idtipotransporte),
+  constraint UQ_nombre_transporte unique (nombre)
+
+);  
+print 'Tabla Transporte.Tipo_Transporte creada';
+go
+
+--Crear tabla vehiculo
+if OBJECT_ID('Transporte.Vehiculo', 'U') is not null
+begin
+    Drop Table Transporte.Vehiculo;
+    print 'La tabla Transporte.Vehiculo Eliminada'
+end
+go
+
+CREATE TABLE Transporte.Vehiculo(
+  idvehiculo int identity (1,1),
+  constraint PK_vehiculo primary key(idvehiculo),
+  idproveedor int not null,
+  constraint FK_vehiculo_proveedor 
+  foreign key (idproveedor)references Compras.Proveedor (idpersona),
+  placa varchar(10) not null,
+  constraint UQ_placa UNIQUE  (placa),
+  marca varchar(50),
+  modelo varchar(50),
+  capacidad_pasajeros int not null,
+  anio_fabricacion int not null,
+  constraint CHK_anio_fabricacion 
+  check (anio_fabricacion between 2000 and year(getdate())),
+  precio_km decimal(10,2),
+  precio_dia decimal (10,2),
+  estado_vehiculo varchar (20) default 'Disponible',
+  fecha_registro datetime default getdate(),
+  constraint CHK_estado_vehiculo
+  check (estado_vehiculo in ('Disponible', 'En Servicio', 'En Mantenimiento' , 'Fuera servicio'))
+
+);  
+print 'Tabla Transporte.Vehiculo creada';
 go
